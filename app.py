@@ -7,7 +7,7 @@ import cv2
 
 app = Flask(__name__)
 
-# ✅ Load model at startup
+
 try:
     print("🔄 Loading model...")
     loaded_model = tf.keras.models.load_model(

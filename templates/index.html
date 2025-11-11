@@ -30,47 +30,51 @@
   </div>
 
   <script>
-    const form = document.getElementById("upload-form");
-    const result = document.getElementById("result");
-    const prediction = document.getElementById("prediction");
-    const confidence = document.getElementById("confidence");
-    const preview = document.getElementById("preview");
-    const fileInput = document.getElementById("file");
+  const form = document.getElementById("upload-form");
+  const result = document.getElementById("result");
+  const prediction = document.getElementById("prediction");
+  const confidence = document.getElementById("confidence");
+  const preview = document.getElementById("preview");
+  const fileInput = document.getElementById("file");
 
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          preview.innerHTML = `<img src="${reader.result}" alt="Preview" />`;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        preview.innerHTML = `<img src="${reader.result}" alt="Preview" />`;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const formData = new FormData();
-      formData.append("file", fileInput.files[0]);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
 
-      prediction.textContent = "⏳ Predicting...";
-      confidence.textContent = "";
-      result.style.display = "block";
+    prediction.textContent = "⏳ Predicting...";
+    confidence.textContent = "";
+    result.style.display = "block";
 
+    try {
+      const res = await fetch("/predict", { method: "POST", body: formData });
+      const text = await res.text(); // read as text first
+      let data;
       try {
-        const res = await fetch("/predict", { method: "POST", body: formData });
-        const data = await res.json();
-
-        if (data.error) {
-          prediction.textContent = "❌ Error: " + data.error;
-        } else {
-          prediction.textContent = `🐾 Prediction: ${data.prediction}`;
-          confidence.textContent = `🎯 Confidence: ${(data.confidence * 100).toFixed(2)}%`;
-        }
-      } catch (err) {
-        prediction.textContent = "❌ Request failed: " + err.message;
+        data = JSON.parse(text);
+      } catch {
+        throw new Error("Server did not return valid JSON");
       }
-    });
-  </script>
-</body>
-</html>
+
+      if (data.error) {
+        prediction.textContent = "❌ Error: " + data.error;
+      } else {
+        prediction.textContent = `🐾 Prediction: ${data.prediction}`;
+        confidence.textContent = `🎯 Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+      }
+    } catch (err) {
+      prediction.textContent = "❌ Request failed: " + err.message;
+    }
+  });
+</script>
