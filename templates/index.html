@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐱 Cat vs 🐶 Dog Classifier</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <h1>🐱 Cat vs 🐶 Dog Classifier</h1>
+      <p>Upload an image to see whether it’s a cat or a dog!</p>
+
+      <form id="upload-form" enctype="multipart/form-data">
+        <label for="file" class="upload-label">
+          📷 Choose an Image
+          <input type="file" id="file" name="file" accept="image/*" required hidden />
+        </label>
+        <button type="submit" class="btn">🔍 Predict</button>
+      </form>
+
+      <div id="preview" class="image-preview"></div>
+
+      <div id="result" class="result-box" style="display: none;">
+        <h3 id="prediction"></h3>
+        <p id="confidence"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const result = document.getElementById("result");
+    const prediction = document.getElementById("prediction");
+    const confidence = document.getElementById("confidence");
+    const preview = document.getElementById("preview");
+    const fileInput = document.getElementById("file");
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          preview.innerHTML = `<img src="${reader.result}" alt="Preview" />`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      prediction.textContent = "⏳ Predicting...";
+      confidence.textContent = "";
+      result.style.display = "block";
+
+      try {
+        const res = await fetch("/predict", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (data.error) {
+          prediction.textContent = "❌ Error: " + data.error;
+        } else {
+          prediction.textContent = `🐾 Prediction: ${data.prediction}`;
+          confidence.textContent = `🎯 Confidence: ${(data.confidence * 100).toFixed(2)}%`;
+        }
+      } catch (err) {
+        prediction.textContent = "❌ Request failed: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
